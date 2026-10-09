@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>成曲台</title>
+<style>
+  :root {
+    --bg: #100e0c;
+    --bg-glow: #241a12;
+    --panel: #191613;
+    --panel-2: #201c18;
+    --line: #322b25;
+    --line-soft: #2a2420;
+    --ink: #efe9e1;
+    --ink-2: #b6ab9e;
+    --ink-3: #857a6d;
+    --amber: #e9a95f;
+    --amber-2: #f6c98a;
+    --sage: #8dbf9c;
+    --rose: #d98374;
+    --radius: 14px;
+    --shadow: 0 18px 48px -28px rgba(0, 0, 0, .9);
+    --control-h: 47px;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    /* Percentage-positioned glows resize with the (very tall) page, which leaves a
+       flat middle and a visible rim where each one ends. Pinning them to the
+       viewport keeps one continuous wash, and zero-alpha stops of the same hue
+       fade out without the grey band the `transparent` keyword produces. */
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1200px 780px at 6% -14%, rgba(38, 27, 18, .95) 0%, rgba(38, 27, 18, 0) 72%),
+      radial-gradient(900px 620px at 104% 106%, rgba(22, 32, 28, .8) 0%, rgba(22, 32, 28, 0) 70%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: var(--ink);
+    font: 15px/1.65 "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace; }
+
+  header {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 30px;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 { margin: 0; font-size: 19px; letter-spacing: .16em; font-weight: 600; }
+  .brand span { color: var(--ink-3); font-size: 13px; }
+
+  .spacer { flex: 1; }
+
+  button {
+    font: inherit; color: inherit; cursor: pointer;
+    border-radius: 10px; border: 1px solid var(--line);
+    background: var(--panel-2);
+    padding: 9px 16px;
+    transition: border-color .16s, background .16s, transform .08s;
+  }
+  button:hover:not(:disabled) { border-color: #463d34; background: #262119; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  button.ghost { background: transparent; }
+  button.primary {
+    border: none;
+    background: linear-gradient(180deg, var(--amber-2), var(--amber));
+    color: #2a1c0c; font-weight: 600; letter-spacing: .04em;
+    padding: 13px 22px; border-radius: 12px;
+    box-shadow: 0 10px 26px -14px rgba(233, 169, 95, .85);
+  }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #ffd79b, #f0b169); }
+
+  .count-chip { display: inline-flex; align-items: center; gap: 7px; }
+  .count-chip b { color: var(--amber-2); font-weight: 600; }
+
+  main {
+    display: grid; grid-template-columns: 396px minmax(0, 1fr);
+    gap: 26px; padding: 26px 30px 70px; align-items: start;
+  }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    position: sticky; top: 84px;
+    background: linear-gradient(180deg, var(--panel), #16130f);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  @media (max-width: 1000px) { .panel { position: static; } }
+
+  fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  label.cap { font-size: 12.5px; letter-spacing: .1em; color: var(--ink-3); }
+
+  textarea, input[type=text], input[type=password], input[type=number], select {
+    width: 100%; font: inherit; color: var(--ink);
+    background: #131110; border: 1px solid var(--line);
+    border-radius: 10px; padding: 11px 13px; height: var(--control-h); outline: none;
+    transition: border-color .16s, box-shadow .16s;
+  }
+  textarea { height: auto; min-height: 104px; resize: vertical; line-height: 1.6; }
+  textarea:focus, input:focus, select:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(233, 169, 95, .14);
+  }
+  textarea::placeholder, input::placeholder { color: #6a6055; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .row { display: flex; gap: 12px; }
+  .row > * { flex: 1; min-width: 0; }
+
+  .seg {
+    display: flex; gap: 6px; background: #131110;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 4px; height: var(--control-h);
+  }
+  .seg button {
+    flex: 1; border: none; background: transparent; padding: 0 4px;
+    border-radius: 7px; color: var(--ink-2); font-size: 13.5px;
+  }
+  .seg button:hover { background: #1e1a16; }
+  .seg button[aria-pressed="true"] {
+    background: linear-gradient(180deg, #3a2e1f, #2c2318);
+    color: var(--amber-2); box-shadow: inset 0 0 0 1px #4d3d28;
+  }
+
+  /* A left-right switch row that matches the height of the inputs above. */
+  .field {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    height: var(--control-h); padding: 0 13px;
+    background: #131110; border: 1px solid var(--line); border-radius: 10px;
+    color: var(--ink-2); font-size: 14px;
+  }
+  .switch {
+    position: relative; flex: none; width: 46px; height: 26px;
+    border-radius: 999px; border: 1px solid var(--line);
+    background: #241f1a; padding: 0; cursor: pointer;
+    transition: background .18s, border-color .18s;
+  }
+  .switch i {
+    position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--ink-3);
+    transition: transform .2s cubic-bezier(.22,.7,.3,1), background .18s;
+  }
+  .switch[aria-checked="true"] { background: #3a2e1f; border-color: #4d3d28; }
+  .switch[aria-checked="true"] i { transform: translateX(20px); background: var(--amber); }
+
+  .hint { color: var(--ink-3); font-size: 12.5px; line-height: 1.55; }
+
+  .refine {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 13px 14px; border-radius: 12px;
+    border: 1px solid #4d3d28; background: #241b11;
+  }
+  .refine-head { display: flex; align-items: center; gap: 10px; }
+  .refine-head span { flex: 1; min-width: 0; color: var(--amber-2); font-size: 13px; }
+  .refine-head b { font-weight: 600; }
+  .refine-head button {
+    flex: none; border: none; background: transparent;
+    color: var(--ink-3); font-size: 12.5px; padding: 3px 7px;
+  }
+  .refine-head button:hover { color: var(--ink-2); background: transparent; }
+
+  /* Cards are children of #cards, not of .stream, so they need their own gap. */
+  .stream { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  #cards { display: flex; flex-direction: column; gap: 22px; }
+
+  .runbar {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--panel); padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .runbar .line { display: flex; align-items: center; gap: 14px; }
+  .runbar .line strong { font-weight: 600; }
+  .bar { height: 5px; border-radius: 99px; background: #241f1a; overflow: hidden; }
+  .bar i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--amber), var(--amber-2));
+    transition: width .45s cubic-bezier(.22,.7,.3,1);
+  }
+
+  .empty {
+    border: 1px dashed var(--line); border-radius: var(--radius);
+    padding: 58px 34px; text-align: center; color: var(--ink-3);
+  }
+  .empty h2 { margin: 0 0 10px; font-size: 16px; color: var(--ink-2); font-weight: 600; letter-spacing: .04em; }
+  .empty p { margin: 0 auto; max-width: 400px; font-size: 13.5px; }
+
+  .card {
+    position: relative; overflow: hidden;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--panel), #161310);
+    padding: 22px 24px 20px;
+    animation: rise .4s cubic-bezier(.22,.7,.3,1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+
+  .card::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
+    background: linear-gradient(180deg, var(--amber), transparent);
+    opacity: .55;
+  }
+
+  .card .head { display: flex; align-items: flex-start; gap: 16px; }
+  .card h3 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .01em; }
+  .card .meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 9px; align-items: center; color: var(--ink-3); font-size: 12.5px; }
+
+  .fav {
+    flex: none; display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 13px; font-size: 13px; border-radius: 999px;
+    background: #17130f; color: var(--ink-3);
+  }
+  .fav:hover:not(:disabled) { color: var(--ink-2); }
+  .fav[aria-pressed="true"] { color: var(--amber-2); border-color: #4d3d28; background: #241b11; }
+
+  .field-note {
+    margin: 7px 0 0; color: var(--ink-3); font-size: 12.5px; line-height: 1.55;
+  }
+  .divider {
+    margin: 4px 0 -4px; padding-top: 18px; border-top: 1px solid var(--line-soft);
+    color: var(--ink-2); font-size: 13px; letter-spacing: .1em;
+  }
+
+  /* The runtime marker lives inside the generate button, so the button keeps its
+     full width and the marker cannot squeeze the label. */
+  .panel .primary { width: 100%; }
+  button.primary { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+  .badge-inline {
+    flex: none; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+    font-size: 11.5px; font-weight: 500; letter-spacing: .02em;
+    background: rgba(42, 28, 12, .14); color: rgba(42, 28, 12, .7);
+    border: 1px solid rgba(42, 28, 12, .2);
+    cursor: help;
+  }
+  .badge-inline.bad {
+    background: rgba(120, 20, 10, .16); color: #6d2015; border-color: rgba(120, 20, 10, .3);
+  }
+
+  .note {
+    margin: 16px 0 0; padding: 14px 16px; border-radius: 10px;
+    background: #14120f; border: 1px solid var(--line-soft);
+    color: var(--ink-2); font-size: 13.8px; line-height: 1.8;
+  }
+  .note .who { display: block; margin-bottom: 6px; color: var(--ink-3); font-size: 12px; letter-spacing: .08em; }
+
+  audio { width: 100%; margin-top: 16px; color-scheme: dark; }
+
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .actions button {
+    padding: 7px 13px; font-size: 13px;
+    background: transparent; color: var(--ink-3);
+  }
+  .actions button:hover { color: var(--ink-2); background: #1c1815; }
+  .actions .from-parent {
+    color: var(--ink-3); font-size: 12px; margin-left: auto;
+  }
+  .lyrics {
+    margin: 12px 0 0; padding: 0 16px; border-radius: 10px;
+    background: #131110; border: 1px solid var(--line-soft);
+    color: var(--ink-2); font-size: 13.5px; line-height: 1.85;
+    white-space: pre-wrap; max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height .35s ease, padding .35s ease, opacity .25s;
+  }
+  .card.open .lyrics { max-height: 440px; padding: 14px 16px; opacity: 1; overflow: auto; }
+
+  .card.waiting { opacity: .82; }
+  .card.waiting::before { background: linear-gradient(180deg, #3d352c, transparent); }
+  .pending { color: var(--ink-3); font-size: 13px; margin: 14px 0 0; }
+
+  .mask {
+    position: fixed; inset: 0; background: rgba(8, 7, 6, .72);
+    backdrop-filter: blur(3px); opacity: 0; pointer-events: none;
+    transition: opacity .22s; z-index: 40;
+  }
+  .mask.open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 94vw);
+    z-index: 41; padding: 26px; overflow-y: auto;
+    background: linear-gradient(180deg, #1b1713, #131110);
+    border-left: 1px solid var(--line);
+    transform: translateX(102%);
+    /* visibility keeps a closed drawer out of the tab order; it flips at the
+       end of the transition so the slide still animates. */
+    visibility: hidden;
+    transition: transform .3s cubic-bezier(.22,.7,.3,1), visibility .3s;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .drawer.open { transform: none; visibility: visible; }
+  .drawer h2 { margin: 0; font-size: 16px; letter-spacing: .06em; }
+  .drawer .note-line { font-size: 12.5px; color: var(--ink-3); }
+  .drawer .foot { margin-top: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .msg { font-size: 12.5px; color: var(--sage); }
+
+  .fav-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    border: 1px solid var(--line-soft); border-radius: 10px;
+    background: #151210; padding: 12px 14px; margin-bottom: 9px;
+  }
+  .fav-item input { width: 16px; height: 16px; margin-top: 3px; accent-color: var(--amber); flex: none; }
+  .fav-item .body { flex: 1; min-width: 0; }
+  .fav-item h4 { margin: 0; font-size: 14.5px; font-weight: 600; }
+  .fav-item .sub { color: var(--ink-3); font-size: 12px; margin-top: 3px; }
+  .fav-item audio { margin-top: 8px; }
+  .fav-item .drop {
+    border: none; background: transparent; color: var(--ink-3);
+    font-size: 12.5px; padding: 2px 6px; flex: none;
+  }
+  .fav-item .drop:hover { color: var(--rose); background: transparent; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2e2721; border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>成曲台</h1>
+    <span>一次生成一组容易被搜到的小曲</span>
+  </div>
+  <div class="spacer"></div>
+  <button id="openFav" class="count-chip">收藏 <b id="favCount">0</b></button>
+  <button id="openSettings">设置</button>
+</header>
+
+<main>
+  <aside class="panel">
+    <div class="refine" id="refineBar" hidden>
+      <div class="refine-head">
+        <span>基于《<b id="refineTitle"></b>》继续优化</span>
+        <button type="button" id="refineCancel">取消</button>
+      </div>
+      <div class="field">
+        <span>保留原歌词</span>
+        <button class="switch" id="keepLyrics" role="switch" aria-checked="true" aria-label="保留原歌词"><i></i></button>
+      </div>
+      <div class="hint">关闭后允许改写歌词，只沿用这首歌的主题和搜索词。</div>
+    </div>
+
+    <fieldset>
+      <label class="cap" for="brief" id="briefLabel">你想做什么样的歌</label>
+      <textarea id="brief" placeholder="例如：适合通勤路上听的中文歌，轻松一点"></textarea>
+    </fieldset>
+
+    <fieldset id="lyricsField">
+      <label class="cap" for="lyrics">自定义歌词（可选）</label>
+      <textarea id="lyrics" placeholder="[Verse]&#10;第一句&#10;第二句&#10;[Chorus]&#10;副歌第一句&#10;副歌第二句"></textarea>
+      <div class="hint">填了就按你写的词唱，不再自动写词；搜索用的标题和曲风仍会自动配好。用 [Verse]、[Chorus] 标注段落。</div>
+    </fieldset>
+
+    <fieldset>
+      <label class="cap" for="seconds">希望时长（秒）</label>
+      <input type="number" id="seconds" min="5" step="5" value="30" inputmode="numeric">
+      <div class="hint">模型自己决定唱多久，改这个只会让歌词跟着长短走。</div>
+    </fieldset>
+
+    <div class="field">
+      <span>严格贴近时长</span>
+      <button class="switch" id="strictDuration" role="switch" aria-checked="false" aria-label="严格贴近时长"><i></i></button>
+    </div>
+    <div class="hint">开启后按目标时长提前收尾，时长更准，但结尾可能不完整。</div>
+
+    <fieldset>
+      <label class="cap" for="count">生成数量</label>
+      <input type="number" id="count" min="1" step="1" value="4" inputmode="numeric">
+    </fieldset>
+
+    <fieldset>
+      <label class="cap">演唱语言</label>
+      <div class="seg" id="language">
+        <button data-v="zh" aria-pressed="true">中文</button>
+        <button data-v="en">英文</button>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <span>前奏与尾奏</span>
+      <button class="switch" id="introOutro" role="switch" aria-checked="true" aria-label="前奏与尾奏"><i></i></button>
+    </div>
+    <div class="hint">开启后由一段简短的器乐开场，结尾也会收一下；关闭则一上来就唱，唱完即止。</div>
+
+    <div class="field">
+      <span>只生产选题</span>
+      <button class="switch" id="ideasOnly" role="switch" aria-checked="false" aria-label="只生产选题"><i></i></button>
+    </div>
+
+  <button class="primary" id="go">
+      <span>开始生成</span>
+      <span class="badge-inline" id="deviceBadge" hidden><span id="deviceText"></span></span>
+    </button>
+    <button class="ghost" id="stop" disabled>停止</button>
+  </aside>
+
+  <section class="stream">
+    <div class="runbar" id="runbar" hidden>
+      <div class="line">
+        <strong id="runTitle">准备中</strong>
+        <span class="spacer"></span>
+        <span class="mono hint" id="runCount"></span>
+      </div>
+      <div class="bar"><i id="runFill"></i></div>
+      <div class="hint" id="runNote">正在启动</div>
+    </div>
+
+    <div class="empty" id="empty">
+      <h2>还没有开始</h2>
+      <p>填写要求后点「开始生成」。每首歌都围绕一个高搜索量的词来写，标题也照着那个词做，方便被人搜到。</p>
+    </div>
+
+    <div id="cards"></div>
+  </section>
+</main>
+
+<div class="mask" id="mask"></div>
+
+<aside class="drawer" id="favDrawer">
+  <h2>收藏</h2>
+  <div class="note-line">勾选想要的曲子，一次打包下载。</div>
+  <div id="favList"></div>
+  <div class="foot">
+    <button id="favAll">全选</button>
+    <button class="primary" id="favDownload">批量下载</button>
+    <button class="ghost" id="closeFav">关闭</button>
+    <span class="msg" id="favMsg"></span>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawer">
+  <h2>设置</h2>
+  <div class="note-line">凭据只保存在本机的 <span class="mono">.env</span>，不会上传到任何地方。</div>
+
+  <fieldset>
+    <label class="cap" for="llmBase">服务地址</label>
+    <input type="text" id="llmBase" placeholder="https://example.com/v1" autocomplete="off">
+  </fieldset>
+  <fieldset>
+    <label class="cap" for="llmKey">密钥</label>
+    <input type="password" id="llmKey" placeholder="留空表示不修改已保存的密钥" autocomplete="off">
+    <div class="hint" id="keyState">尚未配置</div>
+  </fieldset>
+  <fieldset>
+    <label class="cap" for="llmModel">模型名称</label>
+    <input type="text" id="llmModel" placeholder="deepseek-v4.1-flash" autocomplete="off">
+  </fieldset>
+  <fieldset>
+    <label class="cap" for="llmEffort">构思速度</label>
+    <select id="llmEffort">
+      <option value="none">快速（推荐）</option>
+      <option value="">模型默认</option>
+      <option value="low">仔细一些</option>
+    </select>
+    <div class="hint">快速模式不会先长篇思考再动笔，实测快三倍以上，写作质量没有明显差别。</div>
+  </fieldset>
+
+  <div class="divider">曲调参数</div>
+  <div class="hint">留空就用默认值。下面标的是谱面（决定旋律）的默认值，演唱阶段另有一组；填了会同时作用于两者，改动幅度建议小。</div>
+
+  <fieldset>
+    <label class="cap" for="temperature">多样性</label>
+    <input type="number" id="temperature" min="0" max="5" step="0.05" placeholder="默认 0.7" autocomplete="off">
+    <div class="hint">音与音之间的变化幅度。调低更稳妥、不容易出错，但旋律容易变得平铺直叙；调高更容易出现意外的转折，过高会显得散乱。</div>
+  </fieldset>
+
+  <fieldset>
+    <label class="cap" for="topK">候选范围</label>
+    <input type="number" id="topK" min="1" step="1" placeholder="默认 30" autocomplete="off">
+    <div class="hint">每一步从多少个候选音里挑。调小更收敛、旋律更干净，但容易反复用同一批音、听起来单调；调大更自由，也更容易跑调。</div>
+  </fieldset>
+
+  <fieldset>
+    <label class="cap" for="repetitionPenalty">重复惩罚</label>
+    <input type="number" id="repetitionPenalty" min="1" max="3" step="0.005" placeholder="默认 1.005" autocomplete="off">
+    <div class="hint">对刚出现过的音施加多大压力。1 等于完全不干预，旋律容易原地打转；调得太高会不停回避自己，听起来别扭。</div>
+  </fieldset>
+
+  <div class="foot">
+    <button class="primary" id="saveSettings">保存</button>
+    <button class="ghost" id="closeSettings">关闭</button>
+    <span class="msg" id="saveMsg"></span>
+  </div>
+</aside>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  jobId: null,
+  total: 0,
+  ideasOnly: false,
+  parent: null,
+  songs: [],
+  favorites: [],
+  source: null,
+  timer: null,
+};
+
+function esc(text) {
+  return String(text ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ---------- settings ---------- */
+
+async function loadSettings() {
+  const data = await (await fetch("/api/settings")).json();
+  $("llmBase").value = data.llm_base || "";
+  $("llmModel").value = data.llm_model || "";
+  $("llmEffort").value = data.llm_effort || "";
+  $("temperature").value = data.temperature ?? "";
+  $("topK").value = data.top_k ?? "";
+  $("repetitionPenalty").value = data.repetition_penalty ?? "";
+  $("keyState").textContent = data.has_key
+    ? "已保存：" + data.key_masked
+    : "尚未配置，生成前需要先填一个密钥";
+}
+
+async function loadRuntime() {
+  const badge = $("deviceBadge");
+  try {
+    const info = await (await fetch("/api/runtime")).json();
+    badge.hidden = false;
+    badge.classList.toggle("bad", !info.available);
+    badge.title = info.detail || "";
+    $("deviceText").textContent = info.label || "";
+  } catch {
+    badge.hidden = true;
+  }
+}
+
+async function saveSettings() {
+  const body = {
+    llm_base: $("llmBase").value.trim(),
+    llm_key: $("llmKey").value.trim(),
+    llm_model: $("llmModel").value.trim(),
+    llm_effort: $("llmEffort").value,
+    temperature: $("temperature").value.trim(),
+    top_k: $("topK").value.trim(),
+    repetition_penalty: $("repetitionPenalty").value.trim(),
+  };
+  const res = await fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    $("saveMsg").textContent = typeof detail.detail === "string" ? detail.detail : "保存失败";
+    return;
+  }
+  $("llmKey").value = "";
+  $("saveMsg").textContent = "已保存";
+  setTimeout(() => ($("saveMsg").textContent = ""), 2600);
+  await loadSettings();
+}
+
+/* ---------- form ---------- */
+
+function segValue(id) {
+  const btn = document.querySelector(`#${id} button[aria-pressed="true"]`);
+  return btn ? btn.dataset.v : null;
+}
+
+["language"].forEach((id) => {
+  document.querySelectorAll(`#${id} button`).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+    });
+  });
+});
+
+function readInt(id, fallback, min) {
+  const raw = Number($(id).value);
+  if (!Number.isFinite(raw)) return fallback;
+  return Math.max(min, Math.round(raw));
+}
+
+$("count").addEventListener("blur", () => { $("count").value = readInt("count", 4, 1); });
+$("seconds").addEventListener("blur", () => { $("seconds").value = readInt("seconds", 30, 5); });
+
+function wireSwitch(id) {
+  $(id).addEventListener("click", () => {
+    const on = $(id).getAttribute("aria-checked") !== "true";
+    $(id).setAttribute("aria-checked", on ? "true" : "false");
+  });
+}
+["strictDuration", "introOutro", "ideasOnly", "keepLyrics"].forEach(wireSwitch);
+const switchOn = (id) => $(id).getAttribute("aria-checked") === "true";
+
+/* ---------- job ---------- */
+
+async function start() {
+  const count = readInt("count", 4, 1);
+  const seconds = readInt("seconds", 30, 5);
+  $("count").value = count;
+  $("seconds").value = seconds;
+  const payload = {
+    brief: $("brief").value.trim(),
+    lyrics: $("lyrics").value.trim(),
+    count,
+    seconds,
+    intro_outro: switchOn("introOutro"),
+    strict_duration: switchOn("strictDuration"),
+    language: segValue("language"),
+    ideas_only: switchOn("ideasOnly"),
+  };
+  if (state.parent) {
+    payload.parent_job = state.parent.job_id;
+    payload.parent_slug = state.parent.slug;
+    payload.keep_lyrics = switchOn("keepLyrics");
+  }
+  const res = await fetch("/api/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    showRun("无法开始", detail.detail || "请检查设置", 0);
+    openDrawer();
+    return;
+  }
+  const { id } = await res.json();
+  reset(id, count, payload);
+  stream(id);
+}
+
+function showRun(title, note, fill) {
+  $("runbar").hidden = false;
+  $("runTitle").textContent = title;
+  $("runNote").textContent = note;
+  $("runFill").style.width = `${fill}%`;
+}
+
+function reset(id, total, settings) {
+  state.jobId = id;
+  state.total = total;
+  state.ideasOnly = !!(settings && settings.ideas_only);
+  // Mirror the job's switches, or a reload shows unchecked controls that
+  // contradict the cards on screen.
+  $("ideasOnly").setAttribute("aria-checked", state.ideasOnly ? "true" : "false");
+  $("strictDuration").setAttribute("aria-checked",
+    settings && settings.strict_duration ? "true" : "false");
+  $("introOutro").setAttribute("aria-checked",
+    settings && settings.intro_outro === false ? "false" : "true");
+  state.songs = [];
+  $("cards").innerHTML = "";
+  $("empty").hidden = true;
+  $("go").disabled = true;
+  $("stop").disabled = false;
+  showRun("准备中", "正在启动", 0);
+  $("runCount").textContent = state.ideasOnly ? "正在构思" : `0 / ${total}`;
+}
+
+function stream(id) {
+  if (state.source) state.source.close();
+  const source = new EventSource(`/api/jobs/${id}/events?cursor=0`);
+  state.source = source;
+  // Each event carries the job it belongs to, so a late event from a previous
+  // job cannot overwrite the state of the one now running.
+  source.onmessage = (e) => {
+    let event;
+    try { event = JSON.parse(e.data); } catch { return; }
+    if (id !== state.jobId) return;
+    handle(event);
+  };
+  source.onerror = () => { poll(id); };
+  clearInterval(state.timer);
+  state.timer = setInterval(() => poll(id), 4000);
+}
+
+async function poll(id) {
+  if (state.jobId !== id) return;
+  try {
+    const snap = await (await fetch(`/api/jobs/${id}`)).json();
+    if (["succeeded", "failed", "cancelled"].includes(snap.status)) finish(snap);
+  } catch { /* the stream stays the primary channel */ }
+}
+
+function handle(event) {
+  if (event.type === "status" || event.type === "progress") {
+    if (event.message) $("runNote").textContent = event.message;
+    return;
+  }
+  if (event.type === "batch") {
+    $("runNote").textContent = event.message || "正在生成";
+    return;
+  }
+  if (event.type === "ideas") {
+    const ideas = event.ideas || [];
+    $("runNote").textContent = `选题已定：共 ${ideas.length} 首`;
+    if (state.ideasOnly) {
+      $("runCount").textContent = `${ideas.length} 个选题`;
+      $("runFill").style.width = "100%";
+    }
+    ideas.forEach((idea) => card(idea));
+    return;
+  }
+  if (event.type === "song") {
+    state.songs.push(event.song);
+    complete(event.song);
+    $("runCount").textContent = `${state.songs.length} / ${state.total}`;
+    const share = state.total ? Math.min(96, 46 + (state.songs.length / state.total) * 50) : 60;
+    $("runFill").style.width = `${share}%`;
+    $("runNote").textContent = `《${event.song.title}》已完成`;
+    return;
+  }
+  if (event.type === "end") finish(event);
+}
+
+/* ---------- refine mode ---------- */
+
+function enterRefine(jobId, slug, title) {
+  state.parent = { job_id: jobId, slug, title };
+  $("refineTitle").textContent = title;
+  $("refineBar").hidden = false;
+  $("lyricsField").hidden = true;
+  $("briefLabel").textContent = "优化方向（可选）";
+  $("brief").placeholder = "例如：副歌更有记忆点，人声再柔和一些";
+  $("brief").value = "";
+  document.querySelector(".panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("brief").focus();
+}
+
+function exitRefine() {
+  state.parent = null;
+  $("refineBar").hidden = true;
+  $("lyricsField").hidden = false;
+  $("briefLabel").textContent = "你想做什么样的歌";
+  $("brief").placeholder = "例如：适合通勤路上听的中文歌，轻松一点";
+}
+
+function addActions(node, lyrics, slug, title) {
+  const actions = document.createElement("div");
+  actions.className = "actions";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.textContent = "查看歌词";
+
+  const body = document.createElement("pre");
+  body.className = "lyrics";
+  body.textContent = lyrics || "";
+  toggle.onclick = () => {
+    node.classList.toggle("open");
+    toggle.textContent = node.classList.contains("open") ? "收起歌词" : "查看歌词";
+  };
+
+  const refine = document.createElement("button");
+  refine.type = "button";
+  refine.textContent = "继续优化";
+  refine.onclick = () => enterRefine(state.jobId, slug, title);
+
+  actions.append(toggle, refine);
+  node.appendChild(actions);
+  node.appendChild(body);
+}
+
+function card(idea) {
+  const node = document.createElement("article");
+  node.className = "card" + (state.ideasOnly ? "" : " waiting");
+  node.dataset.slug = idea.slug;
+  node.dataset.title = idea.title;
+  const pending = state.ideasOnly ? "" : '<p class="pending">正在生成音频，稍等片刻。</p>';
+  const fav = state.ideasOnly ? "" :
+    '<button type="button" class="fav" aria-pressed="false" data-act="fav" hidden>\u2606 \u6536\u85cf</button>';
+  node.innerHTML = `
+    <div class="head">
+      <div style="flex:1;min-width:0">
+        <h3>${esc(idea.title)}</h3>
+        <div class="meta"><span>${esc(idea.style || "")}</span></div>
+      </div>
+      ${fav}
+    </div>
+    ${idea.note ? `<div class="note"><span class="who">创作说明</span>${esc(idea.note)}</div>` : ""}
+    ${pending}`;
+  if (state.ideasOnly) addActions(node, idea.lyrics, idea.slug, idea.title);
+  $("cards").appendChild(node);
+}
+
+/* Metadata is fetched one player at a time. Loading them all at once competes for
+   the browser's six per-origin connections and some players fail outright, but
+   loading none leaves every control showing 0:00, so serialise them instead. */
+let metadataQueue = Promise.resolve();
+
+function primeMetadata(player) {
+  metadataQueue = metadataQueue.then(() => new Promise((resolve) => {
+    if (player.readyState >= 1) return resolve();
+    const done = () => resolve();
+    player.addEventListener("loadedmetadata", done, { once: true });
+    player.addEventListener("error", done, { once: true });
+    player.preload = "metadata";
+    player.load();
+    setTimeout(done, 8000);
+  }));
+}
+
+function complete(song) {
+  const node = document.querySelector(`[data-slug="${song.slug}"]`);
+  if (!node) return;
+  node.classList.remove("waiting");
+  node.querySelector(".pending")?.remove();
+
+  const meta = node.querySelector(".meta");
+  if (meta) {
+    meta.innerHTML = "";
+    if (song.audio_seconds) meta.insertAdjacentHTML("beforeend", `<span class="mono">${song.audio_seconds.toFixed(1)} 秒</span>`);
+    if (song.style) meta.insertAdjacentHTML("beforeend", `<span>${esc(song.style)}</span>`);
+  }
+
+  if (!node.querySelector("audio")) {
+    const player = document.createElement("audio");
+    player.controls = true;
+    // Start idle so nothing holds a connection, then read the header in turn.
+    player.preload = "none";
+    player.src = song.audio;
+    player.addEventListener("error", () => {
+      if (player.dataset.retried) return;
+      player.dataset.retried = "1";
+      player.src = `${song.audio}?retry=1`;
+      player.load();
+    });
+    node.appendChild(player);
+    primeMetadata(player);
+  }
+
+  if (!node.querySelector(".lyrics")) addActions(node, song.lyrics, song.slug, song.title);
+
+  const fav = node.querySelector(".fav");
+  if (fav) {
+    fav.hidden = false;
+    const saved = state.favorites.some((f) => f.job_id === state.jobId && f.slug === song.slug);
+    fav.setAttribute("aria-pressed", saved ? "true" : "false");
+    fav.textContent = saved ? "\u2605 \u5df2\u6536\u85cf" : "\u2606 \u6536\u85cf";
+    fav.onclick = () => toggleFavorite(song, fav);
+  }
+}
+
+function finish(snap) {
+  if (snap.id && snap.id !== state.jobId) return;
+  clearInterval(state.timer);
+  if (state.source) { state.source.close(); state.source = null; }
+  $("go").disabled = false;
+  $("stop").disabled = true;
+  const status = snap.status || "succeeded";
+  if (status === "succeeded") {
+    $("runTitle").textContent = "已完成";
+    $("runFill").style.width = "100%";
+    $("runNote").textContent = snap.message || "全部完成";
+    if (state.ideasOnly) $("runCount").textContent = `${state.total} 个选题`;
+  } else if (status === "cancelled") {
+    $("runTitle").textContent = "已停止";
+    $("runNote").textContent = "已停止，已经生成的曲子仍然保留。";
+  } else {
+    $("runTitle").textContent = "出错了";
+    $("runNote").textContent = snap.error || snap.message || "生成失败";
+  }
+}
+
+async function stop() {
+  if (!state.jobId) return;
+  await fetch(`/api/jobs/${state.jobId}/cancel`, { method: "POST" });
+  $("runNote").textContent = "正在停止，等当前这一步结束";
+}
+
+/* ---------- favorites ---------- */
+
+async function loadFavorites() {
+  const data = await (await fetch("/api/favorites")).json();
+  state.favorites = data.favorites || [];
+  $("favCount").textContent = state.favorites.length;
+  renderFavorites();
+}
+
+function renderFavorites() {
+  const box = $("favList");
+  if (!state.favorites.length) {
+    box.innerHTML = '<div class="hint">还没有收藏。生成完成后，点曲子上的「收藏」。</div>';
+    return;
+  }
+  box.innerHTML = state.favorites.map((item, index) => `
+    <div class="fav-item" data-index="${index}">
+      <input type="checkbox" ${item.available ? "" : "disabled"}>
+      <div class="body">
+        <h4>${esc(item.title)}</h4>
+        <div class="sub">${item.audio_seconds ? item.audio_seconds.toFixed(1) + " 秒" : ""}${item.available ? "" : " · 音频已被清理"}</div>
+        ${item.available ? `<audio controls preload="none" src="${item.audio}"></audio>` : ""}
+      </div>
+      <button type="button" class="drop" title="移出收藏">移除</button>
+    </div>`).join("");
+  box.querySelectorAll("audio").forEach(primeMetadata);
+  box.querySelectorAll(".drop").forEach((btn) => {
+    btn.onclick = async () => {
+      const item = state.favorites[Number(btn.closest(".fav-item").dataset.index)];
+      await fetch("/api/favorites/remove", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: item.job_id, slug: item.slug }),
+      });
+      await loadFavorites();
+    };
+  });
+}
+
+async function toggleFavorite(song, button) {
+  const on = button.getAttribute("aria-pressed") !== "true";
+  await fetch("/api/favorites" + (on ? "" : "/remove"), {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ job_id: state.jobId, slug: song.slug }),
+  });
+  button.setAttribute("aria-pressed", on ? "true" : "false");
+  button.textContent = on ? "\u2605 \u5df2\u6536\u85cf" : "\u2606 \u6536\u85cf";
+  await loadFavorites();
+}
+
+async function downloadFavorites() {
+  const chosen = [...document.querySelectorAll("#favList .fav-item")]
+    .filter((row) => row.querySelector("input").checked)
+    .map((row) => state.favorites[Number(row.dataset.index)])
+    .filter((item) => item.available)
+    .map((item) => ({ job_id: item.job_id, slug: item.slug }));
+  if (!chosen.length) { $("favMsg").textContent = "先勾选要下载的曲子"; return; }
+  $("favMsg").textContent = `正在打包 ${chosen.length} 首`;
+  const res = await fetch("/api/favorites/download", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: chosen }),
+  });
+  if (!res.ok) { $("favMsg").textContent = "打包失败"; return; }
+  const blob = await res.blob();
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `成曲台收藏-${new Date().toISOString().slice(0, 10)}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 20000);
+  $("favMsg").textContent = `已打包 ${chosen.length} 首`;
+  setTimeout(() => ($("favMsg").textContent = ""), 3000);
+}
+
+/* ---------- drawers ---------- */
+
+function closeDrawers() {
+  document.querySelectorAll(".drawer").forEach((d) => d.classList.remove("open"));
+  $("mask").classList.remove("open");
+}
+function openDrawer() { $("drawer").classList.add("open"); $("mask").classList.add("open"); }
+function openFavorites() {
+  $("favDrawer").classList.add("open");
+  $("mask").classList.add("open");
+  loadFavorites();
+}
+
+$("openSettings").onclick = openDrawer;
+$("openFav").onclick = openFavorites;
+$("saveSettings").onclick = saveSettings;
+$("closeSettings").onclick = closeDrawers;
+$("closeFav").onclick = closeDrawers;
+$("mask").onclick = closeDrawers;
+$("go").onclick = start;
+$("stop").onclick = stop;
+$("refineCancel").onclick = exitRefine;
+$("favDownload").onclick = downloadFavorites;
+$("favAll").onclick = () => {
+  const boxes = [...document.querySelectorAll("#favList input:not(:disabled)")];
+  const turnOn = boxes.some((b) => !b.checked);
+  boxes.forEach((b) => { b.checked = turnOn; });
+};
+
+/* Restore the newest job on load: a reload should neither abandon a running job
+   nor lose the result of the last one. A finished job is drawn from its stored
+   state, because a restored job has no event history to replay. */
+async function boot() {
+  await loadSettings();
+  await loadRuntime();
+  await loadFavorites();
+  try {
+    const { jobs } = await (await fetch("/api/jobs")).json();
+    const newest = jobs[0];
+    if (!newest) return;
+    const total = newest.count || newest.ideas.length || newest.songs.length || 4;
+    reset(newest.id, total, newest);
+    if (newest.status === "queued" || newest.status === "running") {
+      stream(newest.id);
+      return;
+    }
+    newest.ideas.forEach((idea) => card(idea));
+    newest.songs.forEach((song) => complete(song));
+    $("runCount").textContent = state.ideasOnly
+      ? `${newest.ideas.length} 个选题`
+      : `${newest.songs.length} / ${total}`;
+    finish(newest);
+  } catch { /* the form still works without history */ }
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -23,7 +23,7 @@ import uuid
 import weakref
 
 from .protocol import ABC_END, CODEC_OFFSET, CODEC_SIZE, CONTEXT, EOD, MUSIC_END, Sampling
-from .storage import identity, model_identity, sha256_file, write_json
+from .storage import exclusive_lock, identity, model_identity, sha256_file, write_json
 
 WIRE = "YUE2_FAST\t"
 PENALTY, WINDOW = "yue2_window_penalty", "yue2_penalty_window"
@@ -69,10 +69,9 @@ def derive_ar_checkpoint(model_dir, cache_dir=None):
     parent = Path(cache_dir)
     parent.mkdir(parents=True, exist_ok=True)
     target = parent / key
-    # Linux is the supported vLLM platform; lock prevents simultaneous writers.
-    import fcntl
+    # The lock prevents simultaneous writers of the same derived cache.
     with (parent / (key + ".lock")).open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        exclusive_lock(lock)
         if target.exists():
             manifest = json.loads((target / "derivation.json").read_text())
             if manifest.get("identity") != key or manifest.get("source") != source:

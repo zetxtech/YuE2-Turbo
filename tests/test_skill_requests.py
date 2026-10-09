@@ -42,14 +42,16 @@ class RequestChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             score = root / "edited.abc"
-            score.write_text(ABC)
+            # The helper reads raw bytes, so the file has to hold exactly ABC;
+            # without newline="" Windows would write CRLF and the compare fails.
+            score.write_text(ABC, newline="")
             args = self.prepare(root, {"abc": None}, abc_file=score)
             self.assertEqual(MODULE.request_data(args)["abc"], ABC)
 
     def test_score_path_resolves_relative_to_request(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "edited.abc").write_text(ABC)
+            (root / "edited.abc").write_text(ABC, newline="")
             args = self.prepare(root, {"abc_path": "edited.abc"})
             result = MODULE.request_data(args)
             self.assertEqual(result["abc"], ABC)

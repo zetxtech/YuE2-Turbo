@@ -29,6 +29,24 @@ def write_json(path, value):
     os.replace(temporary, path)
 
 
+def exclusive_lock(handle):
+    """Take an exclusive, non-blocking lock, or raise BlockingIOError.
+
+    flock on POSIX, LockFileEx through msvcrt on Windows. The lock lasts while
+    the handle stays open, so callers keep it open for the resource's lifetime.
+    """
+    if os.name == "posix":
+        import fcntl
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return
+    import msvcrt
+    handle.seek(0)
+    try:
+        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+    except OSError as error:
+        raise BlockingIOError(error.strerror or "resource is already locked") from error
+
+
 # Explicit public model files. Extra reports, caches and arbitrary code are not exported.
 MODEL_FILES = frozenset({
     "config.json", "generation_config.json", "yue2_generation_config.json",

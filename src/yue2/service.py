@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, suppress
-import fcntl
 import gc
 import hashlib
 import json
@@ -29,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from .cover import COVER_AUDIO_KEY, COVER_DISABLED, COVER_SHA_KEY, generation_fields
 from .service_store import IdempotencyConflict, JobStore, QueueFull, TERMINAL
+from .storage import exclusive_lock
 
 JSON_BODY_LIMIT = 256 * 1024
 COVER_BODY_LIMIT = 40 * 1024 * 1024
@@ -204,7 +204,7 @@ class JobWorker:
     def start(self):
         self.lock_file = (self.root / "worker.lock").open("a+")
         try:
-            fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            exclusive_lock(self.lock_file)
         except BlockingIOError:
             self.lock_file.close()
             self.lock_file = None

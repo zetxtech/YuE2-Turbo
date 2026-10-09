@@ -18,6 +18,11 @@ from yue2 import quantization as quant
 from yue2.protocol import Sampling
 from yue2.modeling_yue2 import YuE2Config, YuE2ForCausalLM
 
+# The worker runs in its own process group and is stopped with killpg, which has
+# no Windows equivalent. Everything else in this module is cross-platform.
+unix_worker = pytest.mark.skipif(os.name != "posix",
+                                 reason="the vLLM worker needs POSIX process groups")
+
 
 def make_checkpoint(path):
     path.mkdir()
@@ -95,6 +100,7 @@ def test_cfg_and_device_fallback_preserve_protocol(monkeypatch, cfg, legacy, rea
     assert result[1]['backend_actual'] == 'torch' and result[1]['fallback_reason'] == reason
 
 
+@unix_worker
 def test_worker_transport_handles_many_buffered_lines(monkeypatch):
     original_popen = subprocess.Popen
     worker_code = """
@@ -124,6 +130,7 @@ for line in sys.stdin:
     assert worker.process.poll() is not None
 
 
+@unix_worker
 def test_worker_multiplexes_concurrent_requests(monkeypatch):
     original_popen = subprocess.Popen
     worker_code = """
@@ -152,6 +159,7 @@ for q in reversed(requests):
         worker.close()
 
 
+@unix_worker
 def test_cancelling_one_request_keeps_worker_and_peer_alive(monkeypatch):
     original_popen = subprocess.Popen
     worker_code = """

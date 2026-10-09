@@ -5,10 +5,40 @@ once, then passes that same token to ``step``. Prefixes retain independent RoPE
 positions and cache slots. No vLLM, Triton, or custom extension is imported.
 """
 from __future__ import annotations
+from functools import lru_cache
 from numbers import Integral
 
 import torch
 import torch.nn.functional as F
+
+
+@lru_cache(maxsize=1)
+def flash_attention_available() -> bool:
+    """Probe the pinned variable-length FlashAttention kernel, not just its schema.
+
+    The op can be registered while the build omits the kernel (official Windows
+    CUDA wheels raise "USE_FLASH_ATTENTION was not enabled for build"), so a
+    hasattr check is not sufficient.
+    """
+    if not hasattr(torch.ops.aten, "_flash_attention_forward"):
+        return False
+    if "seqused_k" not in str(torch.ops.aten._flash_attention_forward.default._schema):
+        return False
+    if not torch.cuda.is_available():
+        return False
+    try:
+        device = torch.device("cuda", torch.cuda.current_device())
+        query = torch.zeros(1, 1, 64, device=device, dtype=torch.bfloat16)
+        cache = torch.zeros(1, 1, 64, device=device, dtype=torch.bfloat16)
+        offsets = torch.tensor([0, 1], dtype=torch.int32, device=device)
+        lengths = torch.ones(1, dtype=torch.int32, device=device)
+        torch.ops.aten._flash_attention_forward(
+            query, cache, cache, offsets, offsets, 1, 1, 0.0, False, False,
+            seqused_k=lengths)
+        torch.cuda.synchronize(device)
+    except Exception:  # noqa: BLE001 - any failure means the kernel is unusable here
+        return False
+    return True
 
 
 class _PrefixCache:
@@ -74,8 +104,7 @@ class GraphAR:
         if attention_backend not in {"auto", "flash", "cudnn", "sdpa"}:
             raise ValueError("attention_backend must be auto, flash, cudnn, or sdpa")
         fused = self.device.type == "cuda" and self.dtype in {torch.bfloat16, torch.float16} and config.head_dim % 8 == 0
-        flash = fused and config.head_dim <= 256 and hasattr(torch.ops.aten, "_flash_attention_forward") and (
-            "seqused_k" in str(torch.ops.aten._flash_attention_forward.default._schema))
+        flash = fused and config.head_dim <= 256 and flash_attention_available()
         # Torch 2.10 is pinned by the package. Its native variable-length FA
         # accepts GPU effective lengths; the public masked SDPA can select a
         # much slower math kernel. Keep a cuDNN/public-SDPA fallback explicit.

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 import torch
 
-from yue2.cuda_graph import GraphAR
+from yue2.cuda_graph import GraphAR, flash_attention_available
 from yue2.modeling_yue2 import StaticKVCache, YuE2Config, YuE2ForCausalLM
 
 
@@ -131,7 +131,12 @@ def test_real_cuda_graph_bfloat16_parity(model, prefixes, backend, fused):
         graph = GraphAR(model, prefixes, 5, attention_backend=backend, fuse_projections=fused)
         torch.testing.assert_close(graph.prefill(), expected, atol=0, rtol=0)
         assert graph.graph is not None
-        assert graph.attention_backend == ("flash" if backend == "auto" else "cudnn")
+        # "auto" resolves to flash only where that kernel is actually built;
+        # official Windows CUDA wheels fall back to cuDNN.
+        if backend == "auto":
+            assert graph.attention_backend == ("flash" if flash_attention_available() else "cudnn")
+        else:
+            assert graph.attention_backend == "cudnn"
         for keys, values in zip(graph.keys, graph.values):
             for branch, prefix in enumerate(prefixes):
                 keys[branch, len(prefix)+1:].fill_(1000)
